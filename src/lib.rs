@@ -377,6 +377,8 @@ impl ADS111xConfig{
             comp_que: ComparatorQueue::from_bits(bits)}
     }
 
+    /// Use this function to configure a *single* MUX to read by default
+    /// If you want to read multiple MUXs, pass them to `read_single_voltage` instead
     pub fn mux(mut self, mux: InputMultiplexer) -> Self{
         self.mux = mux;
         self
@@ -438,8 +440,8 @@ impl<I2C, E> ADS111x<I2C>
 where
     I2C: I2c<Error = E>,
 {
-    ///Create a new ADS111x instance with the specified configuration
-    ///Note: This only creates the instance, it doesn't write the configuration to the chip
+    /// Create a new ADS111x instance with the specified configuration
+    /// Note: This only creates the instance, it doesn't write the configuration to the chip
     pub fn new(i2c: I2C, address: u8, config: ADS111xConfig) -> Result<Self, ADSError>{
         match address {
             0b1001000 => {},
@@ -451,14 +453,14 @@ where
         Ok(ADS111x{ i2c, address, config} )
     }
 
-    ///Destroys driver instance and returns I²C bus instance.
+    /// Destroys the driver instance and returns the I²C bus instance.
     pub fn destroy(self) -> I2C {
         self.i2c
     }
 
-    ///Writes self configuration to to the chip's registers
-    ///Config can be used to update configuration
-    ///This step is necessary to apply the configuration
+    /// Writes `self.config` to the ADS-chip's registers
+    /// This function can be used multiple times to update the configuration on the ADS-chip
+    /// This step is necessary to apply the configuration
     pub async fn write_config(&mut self, config: Option<ADS111xConfig>) -> Result<(), E>{
         if let Some(conf) = config{
             self.config = conf;
@@ -500,11 +502,11 @@ where
         Ok(self.read_config().await?.osr == OSR::DeviceIdle)
     }
 
-    /// Reads conversion
-    /// does not block to wait for conversion
-    /// will return 0 when conversion was still ongoing
-    /// You can use check_coversion_ready if needed
-    /// only works when Mode is Continuous
+    /// Reads conversion for the *single* configured MUX
+    /// Use `read_single_voltage` to switch between multiple MUX
+    /// This function does *not* wait for the conversion and might return 0 when no ready conversion was found
+    /// You can use `check_coversion_ready` if needed otherwise
+    /// This function only works when `Mode` is `Continuous`
     pub async fn read_voltage(&mut self) -> Result<f32, E> {
         let mut voltage = [0, 0];
         self.i2c.write_read(self.address, &[CONVERSION_REGISTER], &mut voltage).await?;
