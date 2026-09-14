@@ -59,7 +59,7 @@ impl Default for OSR {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum InputMultiplexer {
     AIN0AIN1,
     AIN0AIN3,
